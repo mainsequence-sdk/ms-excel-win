@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ms-excel-win"
+version = "0.1.0"
+description = "Excel integration using xlOil for MainSequence"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "xloil",
+  "mainsequence",
+  "pandas",
+  "requests",
+  "pillow",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ms_excel_win"]
+
+[tool.uv]
+package = true
