@@ -9,11 +9,12 @@ description = "Excel integration using xlOil for MainSequence"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "xloil",
+  "xloil>=0.21",
   "mainsequence",
   "pandas",
   "requests",
   "pillow",
+  "debugpy"
 ]
 
 [tool.hatch.build.targets.wheel]
