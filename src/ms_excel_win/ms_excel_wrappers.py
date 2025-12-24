@@ -451,14 +451,15 @@ _RIBBON_XML = r"""
       <tab id="msTab" label="Main Sequence" insertAfterMso="TabHome">
         <group id="msAuthGroup" label="Authentication">
           <button id="msLogin"
-                  label="Sign In"
-                  size="large"
-                  onAction="onSignIn" />
+                    label="Sign In"
+                    size="large"
+                    onAction="onSignIn"
+                    imageMso="JunkEmailSafeListsMenu" />
           <button id="msLogout"
-                  label="Sign Out"
-                  size="large"
-                  onAction="onSignOut"
-                  imageMso="HappyFace" />
+                    label="Sign Out"
+                    size="large"
+                    onAction="onSignOut"
+                    imageMso="GroupJunkEmail" />
         </group>
       </tab>
     </tabs>
