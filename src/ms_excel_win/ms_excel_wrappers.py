@@ -17,7 +17,7 @@ import requests
 import xloil as xl
 from PIL import Image
 
-from auth import (
+from ms_excel_win.auth import (
     AUTH_CREATE_URL,
     _apply_access_token,
     _authenticate,
