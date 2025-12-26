@@ -258,6 +258,7 @@ def get_data_between_dates_from_node_identifier(
     max_rows: int = 5000,
 ) -> List[List[Any]]:
     
+
     # Flatten the unique_identifiers range first
     unique_ids = _flatten_range(unique_identifiers)
     # Convert to comma-separated string
@@ -302,6 +303,7 @@ def get_data_between_dates_from_node_identifier(
                 columns=column_list or None,
                 #max_rows=int(max_rows) if max_rows is not None else 5000,
             )
+
         except Exception as exc:
             _set_status("Ready")
             sb.msg(f"MS: Request executed.", 0)
@@ -462,7 +464,7 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
 
     _set_status("Ready")
     return _serialize_value(current)
-
+    
 
 _RIBBON_XML = r"""
 <customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
@@ -481,6 +483,13 @@ _RIBBON_XML = r"""
                     onAction="onSignOut"
                     imageMso="GroupJunkEmail" />
         </group>
+        <group id="msDebugGroup" label="Debugging">
+          <button id="startDebugpy"
+                    label="Start Debugpy"
+                    size="large"
+                    onAction="onDebugpyStart"
+                    imageMso="ScriptDebugger" />
+        </group>
       </tab>
     </tabs>
   </ribbon>
@@ -494,6 +503,9 @@ def onSignIn(ctrl: Any) -> None:
 
 def onSignOut(ctrl: Any) -> None:
     sign_out()
+
+def onDebugpyStart(ctrl: Any) -> None:
+    ms_debugpy_start()
 
 
 def _register_ribbon() -> None:
@@ -510,6 +522,7 @@ def _register_ribbon() -> None:
             funcmap={
                 "onSignIn": onSignIn,
                 "onSignOut": onSignOut,
+                "onDebugpyStart": onDebugpyStart,
             },
             connect=True,
         )
