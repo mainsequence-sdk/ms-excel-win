@@ -282,7 +282,7 @@ def get_data_between_dates_from_node_identifier(
 
     tokens = _get_valid_tokens()
     if not tokens:
-        _set_status_bar_msg(f"Request executed.", 0)
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
     _set_status("Preparing request...")
@@ -291,7 +291,7 @@ def get_data_between_dates_from_node_identifier(
         end_dt = _excel_date_to_datetime(end_date)
     except Exception as exc:
         _set_status("Ready")
-        _set_status_bar_msg(f"Request executed.", 0)
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Invalid date input: {exc}")
 
     unique_ids = _flatten_range(unique_identifiers)
@@ -318,7 +318,7 @@ def get_data_between_dates_from_node_identifier(
 
     except Exception as exc:
         _set_status("Ready")
-        _set_status_bar_msg(f"Request executed.", 0)
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Data fetch failed: {exc}")
 
     try:
@@ -336,15 +336,15 @@ def get_data_between_dates_from_node_identifier(
 
         excel_data = _dataframe_to_excel(dataframe, max_rows)
         _set_status("Ready")
-        _set_status_bar_msg(f"Request executed.", 0)
+        _set_status_bar_msg(f"Request executed.", 5000)
         return excel_data
     except Exception as e:
         _set_status("Ready")
         # If result is already Excel-friendly (e.g., list of lists), return it directly.
         if isinstance(result, list):
-            _set_status_bar_msg(f"Request executed.", 0)
+            _set_status_bar_msg(f"Request executed.", 5000)
             return result  # type: ignore[return-value]
-        _set_status_bar_msg(f"Request executed.", 0)
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Unexpected data format returned.{e}")
 
 
@@ -362,8 +362,11 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
     Returns:
         Excel-friendly table or single-cell JSON string.
     """
+    _set_status_bar_msg(f"Fetching data for following node: '{unique_identifier}'", 0)
+
     tokens = _get_valid_tokens()
     if not tokens:
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
     _set_status("Requesting asset...")
@@ -371,6 +374,7 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
         import mainsequence.client as msc  # type: ignore
     except Exception as exc:
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
     asset = _ASSET_CACHE.get(unique_identifier)
@@ -381,16 +385,19 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
                 _ASSET_CACHE[unique_identifier] = asset
         except Exception as exc:
             _set_status("Ready")
+            _set_status_bar_msg(f"Request executed.", 5000)
             return _friendly_error(f"ERROR: Asset lookup failed: {exc}")
 
     if asset is None:
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error("Asset not found.")
 
     try:
         raw = asset.model_dump()
     except Exception as exc:
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Unable to serialize asset: {exc}")
 
     def _serialize_value(val: Any) -> Any:
@@ -409,11 +416,13 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
         for key, val in raw.items():
             rows.append([key, _serialize_value(val)])
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return rows
 
     # Single cell JSON dump
     payload = json.dumps(raw, default=_serialize_value)
     _set_status("Ready")
+    _set_status_bar_msg(f"Request executed.", 5000)
     return [[payload]]
 
 
@@ -429,8 +438,12 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
     Returns:
         A single-cell table containing the field value, JSON-serialized for nested objects.
     """
+
+    _set_status_bar_msg(f"Fetching data for following node: '{unique_identifier}'", 0)
+
     tokens = _get_valid_tokens()
     if not tokens:
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
     _set_status("Requesting asset field...")
@@ -438,6 +451,7 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
         import mainsequence.client as msc  # type: ignore
     except Exception as exc:
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
     asset = _ASSET_CACHE.get(unique_identifier)
@@ -448,10 +462,12 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
                 _ASSET_CACHE[unique_identifier] = asset
         except Exception as exc:
             _set_status("Ready")
+            _set_status_bar_msg(f"Request executed.", 5000)
             return _friendly_error(f"ERROR: Asset lookup failed: {exc}")
 
     if asset is None:
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error("Asset not found.")
 
     # Traverse dot path
@@ -461,6 +477,7 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
             current = getattr(current, part)
     except Exception as exc:
         _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 5000)
         return _friendly_error(f"ERROR: Unable to resolve field '{field_path}': {exc}")
 
     def _serialize_value(val: Any) -> Any:
@@ -475,6 +492,7 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
         return val
 
     _set_status("Ready")
+    _set_status_bar_msg(f"Request executed.", 5000)
     return _serialize_value(current)
     
 
