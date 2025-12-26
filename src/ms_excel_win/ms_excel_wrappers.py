@@ -110,6 +110,17 @@ def _set_status(message: Optional[str]) -> None:
     except Exception as exc:
         _LOG.debug("Unable to set Excel status bar: %s", exc)
 
+def _set_status_bar_msg(message: str, timeout: int = 0) -> None:
+    """ Updates the status bar in Excel using the xlOil StatusBar context manager.
+    Args:
+        message: Message to display in the status bar
+        timeout: Time in seconds to display the message. 0 means indefinite.
+    Returns: None
+    """
+        
+    with xl.StatusBar(timeout) as status:
+        status.msg(message)
+
 
 def _prompt_for_credentials() -> Optional[Dict[str, str]]:
     try:
@@ -258,7 +269,7 @@ def get_data_between_dates_from_node_identifier(
     max_rows: int = 5000,
 ) -> List[List[Any]]:
     
-
+    print("AU: Function Called...")
     # Flatten the unique_identifiers range first
     unique_ids = _flatten_range(unique_identifiers)
     # Convert to comma-separated string
@@ -267,73 +278,74 @@ def get_data_between_dates_from_node_identifier(
     else:
         uid_str = ", ".join(str(u) for u in unique_ids)
 
-    with xl.StatusBar(0) as sb:
-        sb.msg(f"MS: Fetching data for '{uid_str}'...", 0)
+    _set_status_bar_msg(f"Fetching data for following node(s): '{uid_str}'", 0)
 
-        tokens = _get_valid_tokens()
-        if not tokens:
-            sb.msg(f"MS: Request executed.", 0)
-            return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
+    tokens = _get_valid_tokens()
+    if not tokens:
+        _set_status_bar_msg(f"Request executed.", 0)
+        return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
-        _set_status("Preparing request...")
-        try:
-            start_dt = _excel_date_to_datetime(start_date)
-            end_dt = _excel_date_to_datetime(end_date)
-        except Exception as exc:
-            _set_status("Ready")
-            sb.msg(f"MS: Request executed.", 0)
-            return _friendly_error(f"ERROR: Invalid date input: {exc}")
+    _set_status("Preparing request...")
+    try:
+        start_dt = _excel_date_to_datetime(start_date)
+        end_dt = _excel_date_to_datetime(end_date)
+    except Exception as exc:
+        _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 0)
+        return _friendly_error(f"ERROR: Invalid date input: {exc}")
 
-        unique_ids = _flatten_range(unique_identifiers)
-        column_list = _flatten_range(columns)
+    unique_ids = _flatten_range(unique_identifiers)
+    column_list = _flatten_range(columns)
 
-        try:
-            import mainsequence.client.models_tdag as models_tdag  # type: ignore
-        except Exception as exc:
-            sb.msg(f"MS: Request executed.", 0)
-            return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
+    try:
+        import mainsequence.client.models_tdag as models_tdag  # type: ignore
+    except Exception as exc:
+        _set_status_bar_msg(f"Request executed.", 5000)
+        return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
-        try:
-            _set_status("Requesting data from Main Sequence...")
-            result = models_tdag.DataNodeStorage.get_data_between_dates_from_node_identifier(
-                node_identifier,
-                start_dt,
-                end_dt,
-                unique_identifier_list=unique_ids or None,
-                columns=column_list or None,
-                #max_rows=int(max_rows) if max_rows is not None else 5000,
+    try:
+        print("AU: Fetching data...")
+        _set_status("Requesting data from Main Sequence...")
+        result = models_tdag.DataNodeStorage.get_data_between_dates_from_node_identifier(
+            node_identifier,
+            start_dt,
+            end_dt,
+            unique_identifier_list=unique_ids or None,
+            columns=column_list or None,
+            #max_rows=int(max_rows) if max_rows is not None else 5000,
+        )
+        print("AU: Data fetched: ", result)
+
+    except Exception as exc:
+        _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 0)
+        return _friendly_error(f"ERROR: Data fetch failed: {exc}")
+
+    try:
+        _set_status("Processing data...")
+        dataframe, storage_node = result
+        storage_config = storage_node.sourcetableconfiguration
+
+        if not dataframe.empty:
+            dataframe = models_tdag.DataNodeStorage.map_columns_to_df(
+                dataframe,
+                column_dtypes_map=storage_config.column_dtypes_map,
+                time_index_name=storage_config.time_index_name,
+                index_names=storage_config.index_names,
             )
 
-        except Exception as exc:
-            _set_status("Ready")
-            sb.msg(f"MS: Request executed.", 0)
-            return _friendly_error(f"ERROR: Data fetch failed: {exc}")
-
-        try:
-            _set_status("Processing data...")
-            dataframe, storage_node = result
-            storage_config = storage_node.sourcetableconfiguration
-
-            if not dataframe.empty:
-                dataframe = models_tdag.DataNodeStorage.map_columns_to_df(
-                    dataframe,
-                    column_dtypes_map=storage_config.column_dtypes_map,
-                    time_index_name=storage_config.time_index_name,
-                    index_names=storage_config.index_names,
-                )
-
-            excel_data = _dataframe_to_excel(dataframe, max_rows)
-            _set_status("Ready")
-            sb.msg(f"MS: Request executed.", 0)
-            return excel_data
-        except Exception as e:
-            _set_status("Ready")
-            # If result is already Excel-friendly (e.g., list of lists), return it directly.
-            if isinstance(result, list):
-                sb.msg(f"MS: Request executed.", 0)
-                return result  # type: ignore[return-value]
-            sb.msg(f"MS: Request executed.", 0)
-            return _friendly_error(f"ERROR: Unexpected data format returned.{e}")
+        excel_data = _dataframe_to_excel(dataframe, max_rows)
+        _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 0)
+        return excel_data
+    except Exception as e:
+        _set_status("Ready")
+        # If result is already Excel-friendly (e.g., list of lists), return it directly.
+        if isinstance(result, list):
+            _set_status_bar_msg(f"Request executed.", 0)
+            return result  # type: ignore[return-value]
+        _set_status_bar_msg(f"Request executed.", 0)
+        return _friendly_error(f"ERROR: Unexpected data format returned.{e}")
 
 
 
