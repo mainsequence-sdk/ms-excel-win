@@ -101,6 +101,9 @@ def _friendly_error(message: str) -> List[List[str]]:
 
 def _set_status(message: Optional[str]) -> None:
     """Update Excel status bar using the xlOil app wrapper."""
+    # TODO: The following error is appearing in the logs:
+    # DEBUG ms_excel_win.ms_excel_wrappers: Unable to set Excel status bar: xl.app().impl is None
+    # The _set_status_bar_msg() functions can be used to replace this functionality.
     try:
         app = xl.app()
         impl = getattr(app, "impl", None)
