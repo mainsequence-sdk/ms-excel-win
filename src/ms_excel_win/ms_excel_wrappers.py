@@ -248,7 +248,7 @@ def ms_debugpy_start(port: int = 5678) -> str:
 
 
 
-@xl.func(name="MS.GET_DATA_NODE")
+@xl.func(name="MS.GET_DATA_NODE", macro=True)
 def get_data_between_dates_from_node_identifier(
     node_identifier: str,
     start_date: Any,
@@ -257,62 +257,82 @@ def get_data_between_dates_from_node_identifier(
     columns: Any = None,
     max_rows: int = 5000,
 ) -> List[List[Any]]:
-    tokens = _get_valid_tokens()
-    if not tokens:
-        return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
-
-    _set_status("Preparing request...")
-    try:
-        start_dt = _excel_date_to_datetime(start_date)
-        end_dt = _excel_date_to_datetime(end_date)
-    except Exception as exc:
-        _set_status("Ready")
-        return _friendly_error(f"ERROR: Invalid date input: {exc}")
-
+    
+    # Flatten the unique_identifiers range first
     unique_ids = _flatten_range(unique_identifiers)
-    column_list = _flatten_range(columns)
+    # Convert to comma-separated string
+    if not unique_ids:
+        uid_str = " "
+    else:
+        uid_str = ", ".join(str(u) for u in unique_ids)
 
-    try:
-        import mainsequence.client.models_tdag as models_tdag  # type: ignore
-    except Exception as exc:
-        return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
+    with xl.StatusBar(0) as sb:
+        sb.msg(f"MS: Fetching data for '{uid_str}'...", 0)
 
-    try:
-        _set_status("Requesting data from Main Sequence...")
-        result = models_tdag.DataNodeStorage.get_data_between_dates_from_node_identifier(
-            node_identifier,
-            start_dt,
-            end_dt,
-            unique_identifier_list=unique_ids or None,
-            columns=column_list or None,
-            #max_rows=int(max_rows) if max_rows is not None else 5000,
-        )
-    except Exception as exc:
-        _set_status("Ready")
-        return _friendly_error(f"ERROR: Data fetch failed: {exc}")
+        tokens = _get_valid_tokens()
+        if not tokens:
+            sb.msg(f"MS: Request executed.", 0)
+            return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
-    try:
-        _set_status("Processing data...")
-        dataframe, storage_node = result
-        storage_config = storage_node.sourcetableconfiguration
+        _set_status("Preparing request...")
+        try:
+            start_dt = _excel_date_to_datetime(start_date)
+            end_dt = _excel_date_to_datetime(end_date)
+        except Exception as exc:
+            _set_status("Ready")
+            sb.msg(f"MS: Request executed.", 0)
+            return _friendly_error(f"ERROR: Invalid date input: {exc}")
 
-        if not dataframe.empty:
-            dataframe = models_tdag.DataNodeStorage.map_columns_to_df(
-                dataframe,
-                column_dtypes_map=storage_config.column_dtypes_map,
-                time_index_name=storage_config.time_index_name,
-                index_names=storage_config.index_names,
+        unique_ids = _flatten_range(unique_identifiers)
+        column_list = _flatten_range(columns)
+
+        try:
+            import mainsequence.client.models_tdag as models_tdag  # type: ignore
+        except Exception as exc:
+            sb.msg(f"MS: Request executed.", 0)
+            return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
+
+        try:
+            _set_status("Requesting data from Main Sequence...")
+            result = models_tdag.DataNodeStorage.get_data_between_dates_from_node_identifier(
+                node_identifier,
+                start_dt,
+                end_dt,
+                unique_identifier_list=unique_ids or None,
+                columns=column_list or None,
+                #max_rows=int(max_rows) if max_rows is not None else 5000,
             )
+        except Exception as exc:
+            _set_status("Ready")
+            sb.msg(f"MS: Request executed.", 0)
+            return _friendly_error(f"ERROR: Data fetch failed: {exc}")
 
-        excel_data = _dataframe_to_excel(dataframe, max_rows)
-        _set_status("Ready")
-        return excel_data
-    except Exception as e:
-        _set_status("Ready")
-        # If result is already Excel-friendly (e.g., list of lists), return it directly.
-        if isinstance(result, list):
-            return result  # type: ignore[return-value]
-        return _friendly_error(f"ERROR: Unexpected data format returned.{e}")
+        try:
+            _set_status("Processing data...")
+            dataframe, storage_node = result
+            storage_config = storage_node.sourcetableconfiguration
+
+            if not dataframe.empty:
+                dataframe = models_tdag.DataNodeStorage.map_columns_to_df(
+                    dataframe,
+                    column_dtypes_map=storage_config.column_dtypes_map,
+                    time_index_name=storage_config.time_index_name,
+                    index_names=storage_config.index_names,
+                )
+
+            excel_data = _dataframe_to_excel(dataframe, max_rows)
+            _set_status("Ready")
+            sb.msg(f"MS: Request executed.", 0)
+            return excel_data
+        except Exception as e:
+            _set_status("Ready")
+            # If result is already Excel-friendly (e.g., list of lists), return it directly.
+            if isinstance(result, list):
+                sb.msg(f"MS: Request executed.", 0)
+                return result  # type: ignore[return-value]
+            sb.msg(f"MS: Request executed.", 0)
+            return _friendly_error(f"ERROR: Unexpected data format returned.{e}")
+
 
 
 @xl.func(name="MS.GET_ASSET")
@@ -535,3 +555,4 @@ def decompress_curve(curve: str) -> List[List[Any]]:
     except Exception as exc:
         _set_status("Ready")
         return _friendly_error(f"ERROR: Failed to decompress curve: {exc}")
+
