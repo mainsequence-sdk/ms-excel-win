@@ -272,7 +272,7 @@ def get_data_between_dates_from_node_identifier(
     max_rows: int = 5000,
 ) -> List[List[Any]]:
     
-    print("AU: Function Called...")
+    print("AU: Function Called...") # Temporary debug print
     # Flatten the unique_identifiers range first
     unique_ids = _flatten_range(unique_identifiers)
     # Convert to comma-separated string
@@ -307,8 +307,9 @@ def get_data_between_dates_from_node_identifier(
         return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
     try:
-        print("AU: Fetching data...")
+        print("AU: Fetching data...") # Temporary debug print
         _set_status("Requesting data from Main Sequence...")
+        # TODO: 251228_1846: check out the result being received when the server is running fine so debugging can be done
         result = models_tdag.DataNodeStorage.get_data_between_dates_from_node_identifier(
             node_identifier,
             start_dt,
@@ -317,7 +318,7 @@ def get_data_between_dates_from_node_identifier(
             columns=column_list or None,
             #max_rows=int(max_rows) if max_rows is not None else 5000,
         )
-        print("AU: Data fetched: ", result)
+        print("AU: Data fetched: ", result) # Temporary debug print
 
     except Exception as exc:
         _set_status("Ready")
@@ -325,6 +326,7 @@ def get_data_between_dates_from_node_identifier(
         return _friendly_error(f"ERROR: Data fetch failed: {exc}")
 
     try:
+        print("AU: Processing data...") # Temporary debug print
         _set_status("Processing data...")
         dataframe, storage_node = result
         storage_config = storage_node.sourcetableconfiguration
