@@ -149,7 +149,7 @@ Open Excel and load a workbook that calls your functions (or enter `=MS.PING()` 
 #### G2) Attach Visual Studio to Excel
 
 1. Open **Visual Studio** (with Python Tools installed)
-2. **Debug** → **Attach to Process…**
+2. **Debug** (using %debugpy.command.debugUsingLaunchConfig.title%) → **Attach to Process…**
 3. Select `EXCEL.EXE` (if multiple, pick the one matching your Excel window)
 4. For code type, select **Python (Python code only)**
 
