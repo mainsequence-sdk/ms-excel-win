@@ -13,4 +13,8 @@ import mainsequence.client as msc
 print("Test Script")
 ms_excel_wrappers.login_dialog()
 
-ms_excel_wrappers.get_asset_2("90_CBPF_48")
+print(ms_excel_wrappers.get_asset("90_CBPF_48"))
+print("----------------")
+print(ms_excel_wrappers.get_asset("BBG000BS7KS3"))
+print("----------------")
+print(ms_excel_wrappers.get_asset("BBG000BY29C7"))

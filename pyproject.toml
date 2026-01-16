@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "xloil>=0.21",
-  "mainsequence",
+  "mainsequence>=3.10.9",
   "pandas",
   "requests",
   "pillow",
