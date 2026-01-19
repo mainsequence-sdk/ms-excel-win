@@ -13,7 +13,8 @@ import requests
 
 _LOG = logging.getLogger("ms_excel_win.auth")
 
-ROOT_URL = os.environ.get("MS_ROOT_URL", "https://main-sequence.app")  # https://dev-tsorm.ngrok.app 
+ROOT_URL = os.environ.get("MS_ROOT_URL", "https://main-sequence.app")
+
 
 os.environ["TDAG_ENDPOINT"] = ROOT_URL
 
