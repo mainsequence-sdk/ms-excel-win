@@ -223,3 +223,6 @@ Make sure the selected range is large enough. If you see `#N/A`, it usually mean
 
 For more details in array spill in Excel: https://support.microsoft.com/en-us/office/dynamic-array-formulas-and-spilled-array-behavior-205c6b06-03ba-4151-89a1-87a7eb36e531
 
+#### Shortcuts in Excel
+
+- Press **CTRL + ALT + F9** to refresh all functions.
