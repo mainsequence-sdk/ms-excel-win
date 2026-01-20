@@ -340,10 +340,14 @@ def get_data_between_dates_from_node_identifier(
                 index_names=storage_config.index_names,
             )
 
-        excel_data = _dataframe_to_excel(dataframe, max_rows)
-        # _set_status("Ready")
-        _set_status_bar_msg(f"Request executed.", 3000)
-        return excel_data
+            excel_data = _dataframe_to_excel(dataframe, max_rows)
+            # _set_status("Ready")
+            _set_status_bar_msg(f"Request executed.", 3000)
+            return excel_data
+        else:
+            _set_status_bar_msg(f"Request executed.", 3000)
+            return _friendly_error("There is no data with the current filters.")
+        
     except Exception as e:
         # _set_status("Ready")
         # If result is already Excel-friendly (e.g., list of lists), return it directly.

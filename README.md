@@ -203,3 +203,14 @@ With optional filters (comma-separated or ranges):
 ```
 
 If you are not signed in, the function returns an error prompting you to use the ribbon Sign In button or run `MS.LOGIN_DIALOG`.
+```
+#### Array Spill 
+
+Functions like MS.GET_DATE_NODE() and MS.GET_ASSET() reutrn an array and depending on your Excel version, it could spill the whole array into the adjacent cells or it might not (https://support.microsoft.com/en-us/office/dynamic-array-formulas-and-spilled-array-behavior-205c6b06-03ba-4151-89a1-87a7eb36e531).
+The easiest way to do is to:
+- Select an array of cells where you expect the data to spill
+- In the formula box type your function call with arguments (like `=MS.GET_DATA_NODE(D6,D7,D8)`)
+- While having clicked on the formula box press CTRL + SHIFT + ENTER together and it will spill the array
+
+Be sure to select the full size of the return of the array and one way to ensure that is that extend the limit to what you expect till you get `#N/A` in the cells (which means the limit of the data has been reached)
+```
