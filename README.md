@@ -221,4 +221,5 @@ Some functions like `MS.GET_DATE_NODE()` and `MS.GET_ASSET()` return arrays. Dep
 **Note:**\
 Make sure the selected range is large enough. If you see `#N/A`, it usually means you have reached the end of the returned data.
 
+For more details in array spill in Excel: https://support.microsoft.com/en-us/office/dynamic-array-formulas-and-spilled-array-behavior-205c6b06-03ba-4151-89a1-87a7eb36e531
 
