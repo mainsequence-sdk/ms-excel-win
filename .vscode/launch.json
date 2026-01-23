@@ -1,39 +1,39 @@
 
 
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Attach to xlOil (debugpy)",
-      "type": "debugpy",
-      "request": "attach",
-      "connect": { "host": "127.0.0.1", "port":5678 },
-      "justMyCode": false
-    }
-  ]
-}
+// {
+//   "version": "0.2.0",
+//   "configurations": [
+//     {
+//       "name": "Attach to xlOil (debugpy)",
+//       "type": "debugpy",
+//       "request": "attach",
+//       "connect": { "host": "127.0.0.1", "port":5678 },
+//       "justMyCode": false
+//     }
+//   ]
+// }
 
 // -- Excel selection for process id --
 
-// {
-//     "version": "0.2.0",
-//     "configurations": [
-//         {
-//             "name": "Python Debugger: Attach using Process Id",
-//             "type": "debugpy",
-//             "request": "attach",
-//             "processId": "${command:pickProcess}",
-//             "connect": {
-//                 "host": "127.0.0.1",
-//                 "port": 5678
-//             },
-//             "justMyCode": true,
-//             "pathMappings": [
-//                 {
-//                     "localRoot": "${workspaceFolder}",
-//                     "remoteRoot": "${workspaceFolder}"
-//                 }
-//             ]
-//         }
-//     ]
-// }
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Attach using Process Id",
+            "type": "debugpy",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 5678
+            },
+            "justMyCode": true,
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "${workspaceFolder}"
+                }
+            ]
+        }
+    ]
+}

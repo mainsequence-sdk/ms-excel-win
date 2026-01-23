@@ -101,6 +101,10 @@ def _friendly_error(message: str) -> List[List[str]]:
 
 def _set_status(message: Optional[str]) -> None:
     """Update Excel status bar using the xlOil app wrapper."""
+    # TODO: The following error is appearing in the logs:
+    # DEBUG ms_excel_win.ms_excel_wrappers: Unable to set Excel status bar: xl.app().impl is None
+    # The _set_status_bar_msg() functions can be used to replace this functionality.
+    return  # Disable for now
     try:
         app = xl.app()
         impl = getattr(app, "impl", None)
@@ -109,6 +113,17 @@ def _set_status(message: Optional[str]) -> None:
         impl.StatusBar = message or False
     except Exception as exc:
         _LOG.debug("Unable to set Excel status bar: %s", exc)
+
+def _set_status_bar_msg(message: str, timeout: int = 0) -> None:
+    """ Updates the status bar in Excel using the xlOil StatusBar context manager.
+    Args:
+        message: Message to display in the status bar
+        timeout: Time in seconds to display the message. 0 means indefinite.
+    Returns: None
+    """
+        
+    with xl.StatusBar(timeout) as status:
+        status.msg(message)
 
 
 def _prompt_for_credentials() -> Optional[Dict[str, str]]:
@@ -248,7 +263,7 @@ def ms_debugpy_start(port: int = 5678) -> str:
 
 
 
-@xl.func(name="MS.GET_DATA_NODE")
+@xl.func(name="MS.GET_DATA_NODE", macro=True)
 def get_data_between_dates_from_node_identifier(
     node_identifier: str,
     start_date: Any,
@@ -257,16 +272,30 @@ def get_data_between_dates_from_node_identifier(
     columns: Any = None,
     max_rows: int = 5000,
 ) -> List[List[Any]]:
+    
+    # print("AU: Function Called...") # Temporary debug print
+    # Flatten the unique_identifiers range first
+    unique_ids = _flatten_range(unique_identifiers)
+    # Convert to comma-separated string
+    if not unique_ids:
+        uid_str = " "
+    else:
+        uid_str = ", ".join(str(u) for u in unique_ids)
+
+    _set_status_bar_msg(f"Fetching data for following node(s): '{uid_str}'", 0)
+
     tokens = _get_valid_tokens()
     if not tokens:
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
-    _set_status("Preparing request...")
+    # _set_status("Preparing request...")
     try:
         start_dt = _excel_date_to_datetime(start_date)
         end_dt = _excel_date_to_datetime(end_date)
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Invalid date input: {exc}")
 
     unique_ids = _flatten_range(unique_identifiers)
@@ -275,10 +304,13 @@ def get_data_between_dates_from_node_identifier(
     try:
         import mainsequence.client.models_tdag as models_tdag  # type: ignore
     except Exception as exc:
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
     try:
-        _set_status("Requesting data from Main Sequence...")
+        # print("AU: Fetching data...") # Temporary debug print
+        # _set_status("Requesting data from Main Sequence...")
+        # TODO: 251228_1846: check out the result being received when the server is running fine so debugging can be done
         result = models_tdag.DataNodeStorage.get_data_between_dates_from_node_identifier(
             node_identifier,
             start_dt,
@@ -287,12 +319,16 @@ def get_data_between_dates_from_node_identifier(
             columns=column_list or None,
             #max_rows=int(max_rows) if max_rows is not None else 5000,
         )
+        # print("AU: Data fetched: ", result) # Temporary debug print
+
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Data fetch failed: {exc}")
 
     try:
-        _set_status("Processing data...")
+        # print("AU: Processing data...") # Temporary debug print
+        # _set_status("Processing data...")
         dataframe, storage_node = result
         storage_config = storage_node.sourcetableconfiguration
 
@@ -304,15 +340,23 @@ def get_data_between_dates_from_node_identifier(
                 index_names=storage_config.index_names,
             )
 
-        excel_data = _dataframe_to_excel(dataframe, max_rows)
-        _set_status("Ready")
-        return excel_data
+            excel_data = _dataframe_to_excel(dataframe, max_rows)
+            # _set_status("Ready")
+            _set_status_bar_msg(f"Request executed.", 3000)
+            return excel_data
+        else:
+            _set_status_bar_msg(f"Request executed.", 3000)
+            return _friendly_error("There is no data with the current filters.")
+        
     except Exception as e:
-        _set_status("Ready")
+        # _set_status("Ready")
         # If result is already Excel-friendly (e.g., list of lists), return it directly.
         if isinstance(result, list):
+            _set_status_bar_msg(f"Request executed.", 3000)
             return result  # type: ignore[return-value]
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Unexpected data format returned.{e}")
+
 
 
 @xl.func(name="MS.GET_ASSET")
@@ -328,15 +372,19 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
     Returns:
         Excel-friendly table or single-cell JSON string.
     """
+    _set_status_bar_msg(f"Fetching data for following node: '{unique_identifier}'", 0)
+
     tokens = _get_valid_tokens()
     if not tokens:
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
-    _set_status("Requesting asset...")
+    # _set_status("Requesting asset...")
     try:
         import mainsequence.client as msc  # type: ignore
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
     asset = _ASSET_CACHE.get(unique_identifier)
@@ -346,17 +394,20 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
             if asset is not None:
                 _ASSET_CACHE[unique_identifier] = asset
         except Exception as exc:
-            _set_status("Ready")
+            # _set_status("Ready")
+            _set_status_bar_msg(f"Request executed.", 3000)
             return _friendly_error(f"ERROR: Asset lookup failed: {exc}")
 
     if asset is None:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error("Asset not found.")
 
     try:
         raw = asset.model_dump()
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Unable to serialize asset: {exc}")
 
     def _serialize_value(val: Any) -> Any:
@@ -374,12 +425,14 @@ def get_asset(unique_identifier: str, spill_rows: bool = True) -> List[List[Any]
         rows: List[List[Any]] = [["field", "value"]]
         for key, val in raw.items():
             rows.append([key, _serialize_value(val)])
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return rows
 
     # Single cell JSON dump
     payload = json.dumps(raw, default=_serialize_value)
-    _set_status("Ready")
+    # _set_status("Ready")
+    _set_status_bar_msg(f"Request executed.", 3000)
     return [[payload]]
 
 
@@ -395,15 +448,20 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
     Returns:
         A single-cell table containing the field value, JSON-serialized for nested objects.
     """
+
+    _set_status_bar_msg(f"Fetching data for following node: '{unique_identifier}'", 0)
+
     tokens = _get_valid_tokens()
     if not tokens:
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error("ERROR: Not signed in. Use MS.LOGIN_DIALOG or the ribbon Sign In button.")
 
-    _set_status("Requesting asset field...")
+    # _set_status("Requesting asset field...")
     try:
         import mainsequence.client as msc  # type: ignore
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Unable to import mainsequence client: {exc}")
 
     asset = _ASSET_CACHE.get(unique_identifier)
@@ -413,11 +471,13 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
             if asset is not None:
                 _ASSET_CACHE[unique_identifier] = asset
         except Exception as exc:
-            _set_status("Ready")
+            # _set_status("Ready")
+            _set_status_bar_msg(f"Request executed.", 3000)
             return _friendly_error(f"ERROR: Asset lookup failed: {exc}")
 
     if asset is None:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error("Asset not found.")
 
     # Traverse dot path
@@ -426,7 +486,8 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
         for part in field_path.split("."):
             current = getattr(current, part)
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
+        _set_status_bar_msg(f"Request executed.", 3000)
         return _friendly_error(f"ERROR: Unable to resolve field '{field_path}': {exc}")
 
     def _serialize_value(val: Any) -> Any:
@@ -440,9 +501,10 @@ def get_asset_field(unique_identifier: str, field_path: str) -> List[List[Any]]:
             return val.to_pytimedelta()
         return val
 
-    _set_status("Ready")
+    # _set_status("Ready")
+    _set_status_bar_msg(f"Request executed.", 3000)
     return _serialize_value(current)
-
+    
 
 _RIBBON_XML = r"""
 <customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
@@ -461,6 +523,13 @@ _RIBBON_XML = r"""
                     onAction="onSignOut"
                     imageMso="GroupJunkEmail" />
         </group>
+        <group id="msDebugGroup" label="Debugging">
+          <button id="startDebugpy"
+                    label="Start Debugpy"
+                    size="large"
+                    onAction="onDebugpyStart"
+                    imageMso="ScriptDebugger" />
+        </group>
       </tab>
     </tabs>
   </ribbon>
@@ -474,6 +543,9 @@ def onSignIn(ctrl: Any) -> None:
 
 def onSignOut(ctrl: Any) -> None:
     sign_out()
+
+def onDebugpyStart(ctrl: Any) -> None:
+    ms_debugpy_start()
 
 
 def _register_ribbon() -> None:
@@ -490,6 +562,7 @@ def _register_ribbon() -> None:
             funcmap={
                 "onSignIn": onSignIn,
                 "onSignOut": onSignOut,
+                "onDebugpyStart": onDebugpyStart,
             },
             connect=True,
         )
@@ -518,11 +591,11 @@ def decompress_curve(curve: str) -> List[List[Any]]:
     Returns:
         Single-cell JSON string of the decompressed curve or an error message.
     """
-    _set_status("Decompressing curve...")
+    # _set_status("Decompressing curve...")
     try:
         import mainsequence.instruments as msi  # type: ignore
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
         return _friendly_error(f"ERROR: Unable to import mainsequence.instruments: {exc}")
 
     try:
@@ -530,8 +603,9 @@ def decompress_curve(curve: str) -> List[List[Any]]:
         rows: List[List[Any]] = [["days_to_maturity", "rate"]]
         for k, v in data.items():
             rows.append([k, v])
-        _set_status("Ready")
+        # _set_status("Ready")
         return rows
     except Exception as exc:
-        _set_status("Ready")
+        # _set_status("Ready")
         return _friendly_error(f"ERROR: Failed to decompress curve: {exc}")
+

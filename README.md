@@ -149,7 +149,7 @@ Open Excel and load a workbook that calls your functions (or enter `=MS.PING()` 
 #### G2) Attach Visual Studio to Excel
 
 1. Open **Visual Studio** (with Python Tools installed)
-2. **Debug** → **Attach to Process…**
+2. **Debug** (using %debugpy.command.debugUsingLaunchConfig.title%) → **Attach to Process…**
 3. Select `EXCEL.EXE` (if multiple, pick the one matching your Excel window)
 4. For code type, select **Python (Python code only)**
 
@@ -203,3 +203,26 @@ With optional filters (comma-separated or ranges):
 ```
 
 If you are not signed in, the function returns an error prompting you to use the ribbon Sign In button or run `MS.LOGIN_DIALOG`.
+
+#### Array Spill in Excel
+
+Some functions like `MS.GET_DATE_NODE()` and `MS.GET_ASSET()` return arrays. Depending on your Excel version, these arrays may or may not automatically spill into adjacent cells.
+
+**To handle this reliably:**
+
+1.  Select the range of cells where you expect the data to appear.
+
+2.  Type the formula in the formula bar, for example:
+
+        =MS.GET_DATA_NODE(D6, D7, D8)
+
+3.  Press **CTRL + SHIFT + ENTER** to force the array to fill the selected range.
+
+**Note:**\
+Make sure the selected range is large enough. If you see `#N/A`, it usually means you have reached the end of the returned data.
+
+For more details in array spill in Excel: https://support.microsoft.com/en-us/office/dynamic-array-formulas-and-spilled-array-behavior-205c6b06-03ba-4151-89a1-87a7eb36e531
+
+#### Shortcuts in Excel
+
+- Press **CTRL + ALT + F9** to refresh all functions.
